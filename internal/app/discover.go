@@ -5,14 +5,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net"
 	"os/exec"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/spf13/cobra"
 )
 
 type discoveredDevice struct {
@@ -25,7 +24,7 @@ type discoveredDevice struct {
 	BaseURL   string   `json:"base_url"`
 }
 
-func (a *App) Discover(cmd *cobra.Command, args []string) error {
+func (a *App) Discover() error {
 	devs, err := browseMusicCast()
 	if err != nil {
 		return err
@@ -34,11 +33,11 @@ func (a *App) Discover(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	return a.render(out, "application/json")
+	return a.render(out)
 }
 
 func browseMusicCast() ([]discoveredDevice, error) {
-	types := []string{"_musiccast._tcp", "_yamaha._tcp", "_yxc._tcp"}
+	types := []string{"_http._tcp"}
 	all := []discoveredDevice{}
 	seen := map[string]struct{}{}
 	var lastErr error
@@ -100,8 +99,8 @@ func browseService(service string, timeout time.Duration) ([]discoveredDevice, e
 		if action != "Add" {
 			continue
 		}
-		domain := fields[4]
-		svc := fields[5]
+		domain := strings.TrimSuffix(fields[4], ".")
+		svc := strings.TrimSuffix(fields[5], ".")
 		name := strings.Join(fields[6:], " ")
 		if name == "" {
 			continue
@@ -127,11 +126,33 @@ func resolveService(name, service, domain string, timeout time.Duration) (discov
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, "dns-sd", "-L", name, service, domain)
-	out, err := cmd.Output()
+	out, err := cmd.StdoutPipe()
 	if err != nil {
 		return discoveredDevice{}, err
 	}
-	host, port := parseResolveOutput(out)
+	if err := cmd.Start(); err != nil {
+		return discoveredDevice{}, err
+	}
+	scanner := bufio.NewScanner(out)
+	host, port := "", 0
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, "can be reached at") {
+			host, port = parseResolveOutput([]byte(line))
+			break
+		}
+	}
+	_ = cmd.Process.Kill()
+	_ = cmd.Wait()
+	if host == "" {
+		if err := scanner.Err(); err != nil {
+			return discoveredDevice{}, err
+		}
+		if ctx.Err() != nil {
+			return discoveredDevice{}, ctx.Err()
+		}
+		return discoveredDevice{}, errors.New("resolve failed")
+	}
 	host = strings.TrimSuffix(host, ".")
 	addrs := []string{}
 	if host != "" {

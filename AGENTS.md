@@ -17,9 +17,9 @@
 
 # Reference materials
 - Yamaha Extended Control API
-  - [Official Specification PDFs (Basic)](reference/YXC_API_Spec_Basic)
-  - [Official Specification PDFs (Advanced)](reference/YXC_API_Spec_Advanced)
-  - [Unofficial (LLM Generated) OpenAPI Specification](reference/yamaha-extended-control-api.yaml)
+    - [Official Specification PDFs (Basic)](reference/YXC_API_Spec_Basic)
+    - [Official Specification PDFs (Advanced)](reference/YXC_API_Spec_Advanced)
+    - [Unofficial (LLM Generated) OpenAPI Specification](reference/yamaha-extended-control-api.yaml)
 
 # Environment
 - `go` for developing Go applications.

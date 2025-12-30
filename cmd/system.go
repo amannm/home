@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/amannm/home/internal/app"
+	"github.com/amannm/yxc/internal/app"
 	"github.com/spf13/cobra"
 )
 

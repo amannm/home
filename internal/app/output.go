@@ -11,7 +11,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func (a *App) render(body []byte, contentType string) error {
+func (a *App) render(body []byte) error {
 	if len(body) == 0 {
 		return nil
 	}
@@ -23,7 +23,7 @@ func (a *App) render(body []byte, contentType string) error {
 	if err := json.Unmarshal(body, &v); err != nil {
 		_, werr := os.Stdout.Write(body)
 		if werr == nil && !bytes.HasSuffix(body, []byte("\n")) {
-			fmt.Fprintln(os.Stdout)
+			_, _ = fmt.Fprintln(os.Stdout)
 		}
 		return werr
 	}

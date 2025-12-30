@@ -61,14 +61,14 @@ func (a *App) call(method, path string, q url.Values, body []byte, contentType s
 	if a.Options.DryRun {
 		return a.printRequest(req, body)
 	}
-	respBody, status, header, err := a.doRequest(method, path, q, body, contentType)
+	respBody, status, _, err := a.doRequest(method, path, q, body, contentType)
 	if err != nil {
 		return err
 	}
 	if a.Options.Verbose > 0 && !a.Options.Quiet {
-		fmt.Fprintf(os.Stderr, "%s %s -> %d\n", req.Method, req.URL.String(), status)
+		_, _ = fmt.Fprintf(os.Stderr, "%s %s -> %d\n", req.Method, req.URL.String(), status)
 	}
-	if err := a.render(respBody, header.Get("Content-Type")); err != nil {
+	if err := a.render(respBody); err != nil {
 		return err
 	}
 	if status >= 400 {
@@ -162,8 +162,8 @@ func (a *App) doRequest(method, path string, q url.Values, body []byte, contentT
 		if err != nil {
 			lastErr = err
 		} else {
-			defer resp.Body.Close()
 			respBody, rerr := io.ReadAll(resp.Body)
+			_ = resp.Body.Close()
 			if rerr != nil {
 				return nil, resp.StatusCode, resp.Header, rerr
 			}
@@ -212,10 +212,10 @@ func (a *App) printCurl(req *http.Request, body []byte, dry bool) {
 		return
 	}
 	if dry {
-		fmt.Fprintln(os.Stdout, cmd)
+		_, _ = fmt.Fprintln(os.Stdout, cmd)
 		return
 	}
-	fmt.Fprintln(os.Stderr, cmd)
+	_, _ = fmt.Fprintln(os.Stderr, cmd)
 }
 
 func curlCommand(req *http.Request, body []byte, auth string) string {

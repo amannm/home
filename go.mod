@@ -1,4 +1,4 @@
-module github.com/amannm/home
+module github.com/amannm/yxc
 
 go 1.25.5
 
