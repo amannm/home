@@ -1,0 +1,3433 @@
+openapi: 3.0.3
+info:
+  title: Yamaha Extended Control API
+  description: |
+    Yamaha Extended Control (YXC) API specification for MusicCast enabled devices.
+    YXC is Yamaha's communication protocol sent over Ethernet and Wi-Fi to control
+    MusicCast enabled devices including AV receivers, sound bars, wireless speakers,
+    and other audio products.
+
+    This specification combines both Basic and Advanced API features including:
+    - System configuration and status
+    - Zone control (power, volume, input, sound programs)
+    - Tuner control (AM/FM/DAB)
+    - Network/USB media playback
+    - CD playback
+    - Clock and alarm settings
+    - MusicCast Link distribution (multi-room audio)
+
+    Base URL: `http://{host}/YamahaExtendedControl`
+
+    ## Events
+    Events are delivered via UDP unicast when requests include these headers:
+    - `X-AppName: MusicCast/XXX(YYY)` - Application version and OS
+    - `X-AppPort: ZZZ` - Event receiving port
+
+    Event notifications timeout after 10 minutes without new requests.
+  version: "2.00"
+  contact:
+    name: Yamaha Corporation
+  license:
+    name: Proprietary
+    url: https://www.yamaha.com
+
+servers:
+  - url: http://{host}/YamahaExtendedControl
+    description: MusicCast Device
+    variables:
+      host:
+        default: "192.168.1.1"
+        description: IP address of the MusicCast device
+
+tags:
+  - name: System
+    description: System-wide configuration and device information
+  - name: Zone
+    description: Zone control (power, volume, input, sound settings)
+  - name: Tuner
+    description: AM/FM/DAB tuner control
+  - name: NetUSB
+    description: Network and USB media playback
+  - name: CD
+    description: CD player control
+  - name: Clock
+    description: Clock and alarm settings
+  - name: Distribution
+    description: MusicCast Link distribution (multi-room audio)
+
+paths:
+  # ============================================================================
+  # SYSTEM APIs
+  # ============================================================================
+  /v1/system/getDeviceInfo:
+    get:
+      tags: [System]
+      operationId: getDeviceInfo
+      summary: Get device information
+      description: Retrieves basic information about the device including model name, firmware versions, and capabilities.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceInfoResponse"
+
+  /v1/system/getFeatures:
+    get:
+      tags: [System]
+      operationId: getFeatures
+      summary: Get device features
+      description: Retrieves comprehensive feature information including available inputs, zones, functions, and parameter ranges.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeaturesResponse"
+
+  /v1/system/getNetworkStatus:
+    get:
+      tags: [System]
+      operationId: getNetworkStatus
+      summary: Get network status
+      description: Retrieves network configuration and status including IP settings, wireless info, and MAC addresses.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NetworkStatusResponse"
+
+  /v1/system/setWiredLan:
+    post:
+      tags: [System]
+      operationId: setWiredLan
+      summary: Configure wired LAN
+      description: Configures wired network settings. Switches network connection to wired mode.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WiredLanSettings"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/setWirelessLan:
+    post:
+      tags: [System]
+      operationId: setWirelessLan
+      summary: Configure wireless LAN
+      description: Configures wireless network settings. Switches network connection to Wi-Fi mode.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WirelessLanSettings"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/setWirelessDirect:
+    post:
+      tags: [System]
+      operationId: setWirelessDirect
+      summary: Configure wireless direct
+      description: Configures wireless direct connection settings.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [none, wep, wpa2-psk(aes), mixed_mode]
+                key:
+                  type: string
+                  maxLength: 64
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/setNetworkName:
+    get:
+      tags: [System]
+      operationId: setNetworkName
+      summary: Set network name
+      description: Sets the device's network name (friendly name).
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+          description: Network name (UTF-8, max 32 bytes)
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/setAirPlayPin:
+    get:
+      tags: [System]
+      operationId: setAirPlayPin
+      summary: Set AirPlay PIN
+      description: Sets the AirPlay PIN code.
+      parameters:
+        - name: pin
+          in: query
+          required: true
+          schema:
+            type: string
+          description: AirPlay PIN code
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/getNetworkStandby:
+    get:
+      tags: [System]
+      operationId: getNetworkStandby
+      summary: Get network standby setting
+      description: Retrieves the network standby configuration.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response_code:
+                    $ref: "#/components/schemas/ResponseCode"
+                  network_standby:
+                    type: string
+                    enum: [off, on, auto]
+
+  /v1/system/setNetworkStandby:
+    get:
+      tags: [System]
+      operationId: setNetworkStandby
+      summary: Set network standby
+      description: Configures network standby mode.
+      parameters:
+        - name: standby
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [off, on, auto]
+          description: Network standby setting
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/getBluetoothInfo:
+    get:
+      tags: [System]
+      operationId: getBluetoothInfo
+      summary: Get Bluetooth information
+      description: Retrieves Bluetooth configuration and connected device information.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BluetoothInfoResponse"
+
+  /v1/system/setBluetoothStandby:
+    get:
+      tags: [System]
+      operationId: setBluetoothStandby
+      summary: Set Bluetooth standby
+      description: Enables or disables Bluetooth standby mode.
+      parameters:
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/setBluetoothTxSetting:
+    get:
+      tags: [System]
+      operationId: setBluetoothTxSetting
+      summary: Set Bluetooth transmission
+      description: Enables or disables Bluetooth audio transmission.
+      parameters:
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/getBluetoothDeviceList:
+    get:
+      tags: [System]
+      operationId: getBluetoothDeviceList
+      summary: Get Bluetooth device list
+      description: Retrieves list of discovered Bluetooth sink devices.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response_code:
+                    $ref: "#/components/schemas/ResponseCode"
+                  device_list:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        type:
+                          type: string
+                          enum: [loudspeaker, headphone, handsfree_device, unknown]
+                        address:
+                          type: string
+
+  /v1/system/updateBluetoothDeviceList:
+    get:
+      tags: [System]
+      operationId: updateBluetoothDeviceList
+      summary: Update Bluetooth device list
+      description: Starts scanning for Bluetooth sink devices.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/connectBluetoothDevice:
+    get:
+      tags: [System]
+      operationId: connectBluetoothDevice
+      summary: Connect Bluetooth device
+      description: Connects to a Bluetooth sink device.
+      parameters:
+        - name: address
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Bluetooth device address (12-digit hex)
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/disconnectBluetoothDevice:
+    get:
+      tags: [System]
+      operationId: disconnectBluetoothDevice
+      summary: Disconnect Bluetooth device
+      description: Disconnects the currently connected Bluetooth sink device.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/getFuncStatus:
+    get:
+      tags: [System]
+      operationId: getFuncStatus
+      summary: Get function status
+      description: Retrieves overall system function status including speaker settings, HDMI outputs, etc.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FuncStatusResponse"
+
+  /v1/system/setAutoPowerStandby:
+    get:
+      tags: [System]
+      operationId: setAutoPowerStandby
+      summary: Set auto power standby
+      description: Enables or disables auto power standby.
+      parameters:
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/setIrSensor:
+    get:
+      tags: [System]
+      operationId: setIrSensor
+      summary: Set IR sensor
+      description: Enables or disables the IR remote sensor.
+      parameters:
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/setSpeakerA:
+    get:
+      tags: [System]
+      operationId: setSpeakerA
+      summary: Set speaker A
+      description: Enables or disables Speaker A output.
+      parameters:
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/setSpeakerB:
+    get:
+      tags: [System]
+      operationId: setSpeakerB
+      summary: Set speaker B
+      description: Enables or disables Speaker B output.
+      parameters:
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/setDimmer:
+    get:
+      tags: [System]
+      operationId: setDimmer
+      summary: Set dimmer
+      description: Sets the display dimmer level.
+      parameters:
+        - name: value
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Dimmer value (-1 for auto, 0+ for manual)
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/setZoneBVolumeSync:
+    get:
+      tags: [System]
+      operationId: setZoneBVolumeSync
+      summary: Set Zone B volume sync
+      description: Enables or disables Zone B volume synchronization with Zone A.
+      parameters:
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/setHdmiOut1:
+    get:
+      tags: [System]
+      operationId: setHdmiOut1
+      summary: Set HDMI OUT 1
+      description: Enables or disables HDMI OUT 1.
+      parameters:
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/setHdmiOut2:
+    get:
+      tags: [System]
+      operationId: setHdmiOut2
+      summary: Set HDMI OUT 2
+      description: Enables or disables HDMI OUT 2.
+      parameters:
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/getNameText:
+    get:
+      tags: [System]
+      operationId: getNameText
+      summary: Get name text
+      description: Retrieves custom name text for inputs and sound programs.
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: ID of input or sound program
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response_code:
+                    $ref: "#/components/schemas/ResponseCode"
+                  text:
+                    type: string
+
+  /v1/system/setNameText:
+    get:
+      tags: [System]
+      operationId: setNameText
+      summary: Set name text
+      description: Sets custom name text for inputs.
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: text
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 64
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/getLocationInfo:
+    get:
+      tags: [System]
+      operationId: getLocationInfo
+      summary: Get location info
+      description: Retrieves MusicCast network location information.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response_code:
+                    $ref: "#/components/schemas/ResponseCode"
+                  id:
+                    type: string
+                    description: Location ID (32 characters)
+                  name:
+                    type: string
+                  zone_list:
+                    type: object
+
+  /v1/system/sendIrCode:
+    get:
+      tags: [System]
+      operationId: sendIrCode
+      summary: Send IR code
+      description: Sends an IR remote control code.
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: IR code in hex format
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/setAutoPlay:
+    get:
+      tags: [System]
+      operationId: setAutoPlay
+      summary: Set auto play
+      description: Configures auto play behavior.
+      parameters:
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/setSpeakerPattern:
+    get:
+      tags: [System]
+      operationId: setSpeakerPattern
+      summary: Set speaker pattern
+      description: Sets the speaker configuration pattern.
+      parameters:
+        - name: num
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/setPartyMode:
+    get:
+      tags: [System]
+      operationId: setPartyMode
+      summary: Set party mode
+      description: Enables or disables party mode.
+      parameters:
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/requestNetworkReboot:
+    get:
+      tags: [System]
+      operationId: requestNetworkReboot
+      summary: Request network reboot
+      description: Reboots the network module.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/system/requestSystemReboot:
+    get:
+      tags: [System]
+      operationId: requestSystemReboot
+      summary: Request system reboot
+      description: Reboots the entire system.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  # ============================================================================
+  # ZONE APIs
+  # ============================================================================
+  /v1/{zone}/getStatus:
+    get:
+      tags: [Zone]
+      operationId: getZoneStatus
+      summary: Get zone status
+      description: Retrieves status of specified zone including power, volume, input, and sound settings.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ZoneStatusResponse"
+
+  /v1/{zone}/getSoundProgramList:
+    get:
+      tags: [Zone]
+      operationId: getSoundProgramList
+      summary: Get sound program list
+      description: Retrieves list of available sound programs for the zone.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response_code:
+                    $ref: "#/components/schemas/ResponseCode"
+                  sound_program_list:
+                    type: array
+                    items:
+                      type: string
+
+  /v1/{zone}/setPower:
+    get:
+      tags: [Zone]
+      operationId: setZonePower
+      summary: Set zone power
+      description: Sets power state of the specified zone.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: power
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [on, standby, toggle]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setSleep:
+    get:
+      tags: [Zone]
+      operationId: setZoneSleep
+      summary: Set sleep timer
+      description: Sets sleep timer for the specified zone.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: sleep
+          in: query
+          required: true
+          schema:
+            type: integer
+            enum: [0, 30, 60, 90, 120]
+          description: Sleep time in minutes (0 to disable)
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setVolume:
+    get:
+      tags: [Zone]
+      operationId: setZoneVolume
+      summary: Set zone volume
+      description: Sets volume level for the specified zone.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: volume
+          in: query
+          required: true
+          schema:
+            oneOf:
+              - type: integer
+              - type: string
+                enum: [up, down]
+          description: Volume level or up/down command
+        - name: step
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Step value for up/down commands
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setMute:
+    get:
+      tags: [Zone]
+      operationId: setZoneMute
+      summary: Set zone mute
+      description: Sets mute state for the specified zone.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setInput:
+    get:
+      tags: [Zone]
+      operationId: setZoneInput
+      summary: Set zone input
+      description: Selects input source for the specified zone.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: input
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Input ID
+        - name: mode
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [autoplay_disabled]
+          description: Select mode
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setSoundProgram:
+    get:
+      tags: [Zone]
+      operationId: setZoneSoundProgram
+      summary: Set sound program
+      description: Selects sound program for the specified zone.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: program
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Sound program ID
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/set3dSurround:
+    get:
+      tags: [Zone]
+      operationId: setZone3dSurround
+      summary: Set 3D surround
+      description: Enables or disables 3D surround processing.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setDirect:
+    get:
+      tags: [Zone]
+      operationId: setZoneDirect
+      summary: Set direct mode
+      description: Enables or disables direct playback mode.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setPureDirect:
+    get:
+      tags: [Zone]
+      operationId: setZonePureDirect
+      summary: Set pure direct mode
+      description: Enables or disables pure direct playback mode.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setEnhancer:
+    get:
+      tags: [Zone]
+      operationId: setZoneEnhancer
+      summary: Set enhancer
+      description: Enables or disables the compressed music enhancer.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setToneControl:
+    get:
+      tags: [Zone]
+      operationId: setZoneToneControl
+      summary: Set tone control
+      description: Sets bass and treble levels.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: mode
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [manual, auto, bypass]
+        - name: bass
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: treble
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setEqualizer:
+    get:
+      tags: [Zone]
+      operationId: setZoneEqualizer
+      summary: Set equalizer
+      description: Sets equalizer settings (low, mid, high).
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: mode
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [manual, auto, bypass]
+        - name: low
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: mid
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: high
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setBalance:
+    get:
+      tags: [Zone]
+      operationId: setZoneBalance
+      summary: Set balance
+      description: Sets left/right speaker balance.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: value
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Balance value (negative=left, positive=right)
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setDialogueLevel:
+    get:
+      tags: [Zone]
+      operationId: setZoneDialogueLevel
+      summary: Set dialogue level
+      description: Sets the dialogue/vocal enhancement level.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: value
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setDialogueLift:
+    get:
+      tags: [Zone]
+      operationId: setZoneDialogueLift
+      summary: Set dialogue lift
+      description: Sets the dialogue lift height.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: value
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setClearVoice:
+    get:
+      tags: [Zone]
+      operationId: setZoneClearVoice
+      summary: Set clear voice
+      description: Enables or disables clear voice enhancement.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setSubwooferVolume:
+    get:
+      tags: [Zone]
+      operationId: setZoneSubwooferVolume
+      summary: Set subwoofer volume
+      description: Sets the subwoofer volume level.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: volume
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setBassExtension:
+    get:
+      tags: [Zone]
+      operationId: setZoneBassExtension
+      summary: Set bass extension
+      description: Enables or disables bass extension.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/getSignalInfo:
+    get:
+      tags: [Zone]
+      operationId: getZoneSignalInfo
+      summary: Get signal info
+      description: Retrieves audio signal information for the zone.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response_code:
+                    $ref: "#/components/schemas/ResponseCode"
+                  audio:
+                    type: object
+                    properties:
+                      error:
+                        type: integer
+                      format:
+                        type: string
+                      fs:
+                        type: string
+
+  /v1/{zone}/prepareInputChange:
+    get:
+      tags: [Zone]
+      operationId: prepareInputChange
+      summary: Prepare input change
+      description: Prepares the device for an input change operation.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: input
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Input ID to prepare
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/recallScene:
+    get:
+      tags: [Zone]
+      operationId: recallScene
+      summary: Recall scene
+      description: Recalls a saved scene configuration.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: num
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Scene number
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setContentsDisplay:
+    get:
+      tags: [Zone]
+      operationId: setContentsDisplay
+      summary: Set contents display
+      description: Enables or disables the on-screen display.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/controlCursor:
+    get:
+      tags: [Zone]
+      operationId: controlCursor
+      summary: Control cursor
+      description: Sends cursor navigation commands.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: cursor
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [up, down, left, right, select, return]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/executeMenu:
+    get:
+      tags: [Zone]
+      operationId: executeMenu
+      summary: Execute menu
+      description: Executes menu commands.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: menu
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [on_screen, top_menu, menu, option, display, help, home, mode, red, green, yellow, blue]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setActualVolume:
+    get:
+      tags: [Zone]
+      operationId: setActualVolume
+      summary: Set actual volume mode
+      description: Sets the volume display mode.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: mode
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [db, numeric]
+        - name: value
+          in: query
+          required: false
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setSurroundDecoderType:
+    get:
+      tags: [Zone]
+      operationId: setSurroundDecoderType
+      summary: Set surround decoder type
+      description: Sets the surround decoder mode.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [toggle, auto, dolby_pl, dolby_pl2x_movie, dolby_pl2x_music, dolby_pl2x_game, dolby_surround, dts_neural_x, dts_neo6_cinema, dts_neo6_music]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setLinkControl:
+    get:
+      tags: [Zone]
+      operationId: setLinkControl
+      summary: Set link control
+      description: Sets the MusicCast Link control mode.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: control
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [standard, stability, speed]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setLinkAudioDelay:
+    get:
+      tags: [Zone]
+      operationId: setLinkAudioDelay
+      summary: Set link audio delay
+      description: Sets the MusicCast Link audio delay mode.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: delay
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [lip_sync, audio_sync, audio_sync_on, audio_sync_off, balanced]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/{zone}/setLinkAudioQuality:
+    get:
+      tags: [Zone]
+      operationId: setLinkAudioQuality
+      summary: Set link audio quality
+      description: Sets the MusicCast Link audio quality.
+      parameters:
+        - $ref: "#/components/parameters/zone"
+        - name: quality
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [compressed, uncompressed]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  # ============================================================================
+  # TUNER APIs
+  # ============================================================================
+  /v1/tuner/getPresetInfo:
+    get:
+      tags: [Tuner]
+      operationId: getTunerPresetInfo
+      summary: Get tuner preset info
+      description: Retrieves tuner preset information.
+      parameters:
+        - name: band
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [common, am, fm, dab]
+          description: Band type (common or separate by band)
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TunerPresetInfoResponse"
+
+  /v1/tuner/getPlayInfo:
+    get:
+      tags: [Tuner]
+      operationId: getTunerPlayInfo
+      summary: Get tuner play info
+      description: Retrieves current tuner playback information.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TunerPlayInfoResponse"
+
+  /v1/tuner/setBand:
+    get:
+      tags: [Tuner]
+      operationId: setTunerBand
+      summary: Set tuner band
+      description: Selects the tuner band.
+      parameters:
+        - name: band
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [am, fm, dab]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/tuner/setFreq:
+    get:
+      tags: [Tuner]
+      operationId: setTunerFreq
+      summary: Set tuner frequency
+      description: Sets the tuner frequency or initiates auto scan.
+      parameters:
+        - name: band
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [am, fm]
+        - name: tuning
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [tp_up, tp_down, direct, auto_up, auto_down, cancel]
+          description: Tuning mode
+        - name: num
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Frequency in kHz (for direct tuning)
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/tuner/recallPreset:
+    get:
+      tags: [Tuner]
+      operationId: recallTunerPreset
+      summary: Recall tuner preset
+      description: Recalls a tuner preset.
+      parameters:
+        - name: zone
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/ZoneId"
+        - name: band
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [common, am, fm, dab]
+        - name: num
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Preset number
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/tuner/switchPreset:
+    get:
+      tags: [Tuner]
+      operationId: switchTunerPreset
+      summary: Switch tuner preset
+      description: Switches to next or previous tuner preset.
+      parameters:
+        - name: dir
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [next, previous]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/tuner/storePreset:
+    get:
+      tags: [Tuner]
+      operationId: storeTunerPreset
+      summary: Store tuner preset
+      description: Stores current station to a preset.
+      parameters:
+        - name: num
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Preset number
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/tuner/clearPreset:
+    get:
+      tags: [Tuner]
+      operationId: clearTunerPreset
+      summary: Clear tuner preset
+      description: Clears a tuner preset.
+      parameters:
+        - name: band
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [common, am, fm, dab]
+        - name: num
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/tuner/startAutoPreset:
+    get:
+      tags: [Tuner]
+      operationId: startAutoPreset
+      summary: Start auto preset
+      description: Starts automatic preset scanning.
+      parameters:
+        - name: band
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [fm]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/tuner/cancelAutoPreset:
+    get:
+      tags: [Tuner]
+      operationId: cancelAutoPreset
+      summary: Cancel auto preset
+      description: Cancels automatic preset scanning.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/tuner/movePreset:
+    get:
+      tags: [Tuner]
+      operationId: moveTunerPreset
+      summary: Move tuner preset
+      description: Moves a tuner preset to a new location.
+      parameters:
+        - name: band
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [common, am, fm, dab]
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/tuner/startDabInitialScan:
+    get:
+      tags: [Tuner]
+      operationId: startDabInitialScan
+      summary: Start DAB initial scan
+      description: Starts DAB initial frequency scan.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/tuner/cancelDabInitialScan:
+    get:
+      tags: [Tuner]
+      operationId: cancelDabInitialScan
+      summary: Cancel DAB initial scan
+      description: Cancels DAB initial frequency scan.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/tuner/setDabService:
+    get:
+      tags: [Tuner]
+      operationId: setDabService
+      summary: Set DAB service
+      description: Selects a DAB service by direction.
+      parameters:
+        - name: dir
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [next, previous]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  # ============================================================================
+  # NETUSB APIs
+  # ============================================================================
+  /v1/netusb/getPresetInfo:
+    get:
+      tags: [NetUSB]
+      operationId: getNetUsbPresetInfo
+      summary: Get Net/USB preset info
+      description: Retrieves Net/USB preset information.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NetUsbPresetInfoResponse"
+
+  /v1/netusb/getPlayInfo:
+    get:
+      tags: [NetUSB]
+      operationId: getNetUsbPlayInfo
+      summary: Get Net/USB play info
+      description: Retrieves current Net/USB playback information.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NetUsbPlayInfoResponse"
+
+  /v1/netusb/setPlayback:
+    get:
+      tags: [NetUSB]
+      operationId: setNetUsbPlayback
+      summary: Set Net/USB playback
+      description: Controls playback state.
+      parameters:
+        - name: playback
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [play, stop, pause, play_pause, previous, next, fast_reverse_start, fast_reverse_end, fast_forward_start, fast_forward_end]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/netusb/setPlayPosition:
+    get:
+      tags: [NetUSB]
+      operationId: setNetUsbPlayPosition
+      summary: Set play position
+      description: Sets the playback position (seek).
+      parameters:
+        - name: position
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Position in seconds
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/netusb/setRepeat:
+    get:
+      tags: [NetUSB]
+      operationId: setNetUsbRepeat
+      summary: Set repeat mode
+      description: Sets the repeat mode.
+      parameters:
+        - name: mode
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [off, one, all]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/netusb/setShuffle:
+    get:
+      tags: [NetUSB]
+      operationId: setNetUsbShuffle
+      summary: Set shuffle mode
+      description: Sets the shuffle mode.
+      parameters:
+        - name: mode
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [off, on, songs, albums]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/netusb/toggleRepeat:
+    get:
+      tags: [NetUSB]
+      operationId: toggleNetUsbRepeat
+      summary: Toggle repeat
+      description: Toggles through repeat modes.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/netusb/toggleShuffle:
+    get:
+      tags: [NetUSB]
+      operationId: toggleNetUsbShuffle
+      summary: Toggle shuffle
+      description: Toggles through shuffle modes.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/netusb/getListInfo:
+    get:
+      tags: [NetUSB]
+      operationId: getNetUsbListInfo
+      summary: Get list info
+      description: Retrieves browsable list information.
+      parameters:
+        - name: input
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Input source ID
+        - name: index
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+          description: Starting index
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 8
+            maximum: 8
+          description: Number of items to retrieve
+        - name: lang
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Language code
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NetUsbListInfoResponse"
+
+  /v1/netusb/setListControl:
+    get:
+      tags: [NetUSB]
+      operationId: setNetUsbListControl
+      summary: Set list control
+      description: Controls list navigation and selection.
+      parameters:
+        - name: list_id
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [main, auto_complete, search_artist, search_track]
+            default: main
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [select, play, return]
+        - name: index
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Item index (required for select/play)
+        - name: zone
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ZoneId"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/netusb/setSearchString:
+    post:
+      tags: [NetUSB]
+      operationId: setNetUsbSearchString
+      summary: Set search string
+      description: Sets the search string for content searching.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [string]
+              properties:
+                list_id:
+                  type: string
+                  default: main
+                string:
+                  type: string
+                  maxLength: 64999
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/netusb/recallPreset:
+    get:
+      tags: [NetUSB]
+      operationId: recallNetUsbPreset
+      summary: Recall Net/USB preset
+      description: Recalls a Net/USB content preset.
+      parameters:
+        - name: zone
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/ZoneId"
+        - name: num
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Preset number
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/netusb/storePreset:
+    get:
+      tags: [NetUSB]
+      operationId: storeNetUsbPreset
+      summary: Store Net/USB preset
+      description: Stores current content to a preset.
+      parameters:
+        - name: num
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/netusb/clearPreset:
+    get:
+      tags: [NetUSB]
+      operationId: clearNetUsbPreset
+      summary: Clear Net/USB preset
+      description: Clears a Net/USB preset.
+      parameters:
+        - name: num
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/netusb/movePreset:
+    get:
+      tags: [NetUSB]
+      operationId: moveNetUsbPreset
+      summary: Move Net/USB preset
+      description: Moves a preset to a new location.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/netusb/getRecentInfo:
+    get:
+      tags: [NetUSB]
+      operationId: getRecentInfo
+      summary: Get recent info
+      description: Retrieves recently played content information.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response_code:
+                    $ref: "#/components/schemas/ResponseCode"
+                  recent_info:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        input:
+                          type: string
+                        text:
+                          type: string
+                        albumart_url:
+                          type: string
+                        attribute:
+                          type: integer
+
+  /v1/netusb/recallRecentItem:
+    get:
+      tags: [NetUSB]
+      operationId: recallRecentItem
+      summary: Recall recent item
+      description: Plays a recently played item.
+      parameters:
+        - name: zone
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/ZoneId"
+        - name: num
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/netusb/clearRecentInfo:
+    get:
+      tags: [NetUSB]
+      operationId: clearRecentInfo
+      summary: Clear recent info
+      description: Clears the recently played history.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/netusb/getSettings:
+    get:
+      tags: [NetUSB]
+      operationId: getNetUsbSettings
+      summary: Get Net/USB settings
+      description: Retrieves streaming service settings.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response_code:
+                    $ref: "#/components/schemas/ResponseCode"
+
+  /v1/netusb/setQuality:
+    get:
+      tags: [NetUSB]
+      operationId: setNetUsbQuality
+      summary: Set quality
+      description: Sets streaming quality settings.
+      parameters:
+        - name: input
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: value
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/netusb/getAccountStatus:
+    get:
+      tags: [NetUSB]
+      operationId: getAccountStatus
+      summary: Get account status
+      description: Retrieves streaming service account status.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response_code:
+                    $ref: "#/components/schemas/ResponseCode"
+
+  /v1/netusb/getServiceInfo:
+    get:
+      tags: [NetUSB]
+      operationId: getServiceInfo
+      summary: Get service info
+      description: Retrieves streaming service-specific information.
+      parameters:
+        - name: input
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response_code:
+                    $ref: "#/components/schemas/ResponseCode"
+
+  # ============================================================================
+  # CD APIs
+  # ============================================================================
+  /v1/cd/getPlayInfo:
+    get:
+      tags: [CD]
+      operationId: getCdPlayInfo
+      summary: Get CD play info
+      description: Retrieves current CD playback information.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CdPlayInfoResponse"
+
+  /v1/cd/setPlayback:
+    get:
+      tags: [CD]
+      operationId: setCdPlayback
+      summary: Set CD playback
+      description: Controls CD playback.
+      parameters:
+        - name: playback
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [play, stop, pause, previous, next, fast_reverse_start, fast_reverse_end, fast_forward_start, fast_forward_end, track_select]
+        - name: num
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Track number (for track_select)
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/cd/toggleTray:
+    get:
+      tags: [CD]
+      operationId: toggleCdTray
+      summary: Toggle CD tray
+      description: Opens or closes the CD tray.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/cd/setRepeat:
+    get:
+      tags: [CD]
+      operationId: setCdRepeat
+      summary: Set CD repeat
+      description: Sets CD repeat mode.
+      parameters:
+        - name: mode
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [off, one, all, folder, a-b]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/cd/setShuffle:
+    get:
+      tags: [CD]
+      operationId: setCdShuffle
+      summary: Set CD shuffle
+      description: Sets CD shuffle mode.
+      parameters:
+        - name: mode
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [off, on, folder, program]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/cd/toggleRepeat:
+    get:
+      tags: [CD]
+      operationId: toggleCdRepeat
+      summary: Toggle CD repeat
+      description: Toggles through CD repeat modes.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/cd/toggleShuffle:
+    get:
+      tags: [CD]
+      operationId: toggleCdShuffle
+      summary: Toggle CD shuffle
+      description: Toggles through CD shuffle modes.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/cd/setDirect:
+    get:
+      tags: [CD]
+      operationId: setCdDirect
+      summary: Set CD direct
+      description: Enables or disables direct CD playback.
+      parameters:
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  # ============================================================================
+  # CLOCK APIs
+  # ============================================================================
+  /v1/clock/getSettings:
+    get:
+      tags: [Clock]
+      operationId: getClockSettings
+      summary: Get clock settings
+      description: Retrieves clock and alarm settings.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClockSettingsResponse"
+
+  /v1/clock/setAutoSync:
+    get:
+      tags: [Clock]
+      operationId: setClockAutoSync
+      summary: Set clock auto sync
+      description: Enables or disables automatic clock synchronization.
+      parameters:
+        - name: enable
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/clock/setDateAndTime:
+    get:
+      tags: [Clock]
+      operationId: setDateAndTime
+      summary: Set date and time
+      description: Manually sets the date and time.
+      parameters:
+        - name: date_time
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Date/time in YYMMDDhhmmss format
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/clock/setClockFormat:
+    get:
+      tags: [Clock]
+      operationId: setClockFormat
+      summary: Set clock format
+      description: Sets the clock display format.
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [12h, 24h]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/clock/setAlarmSettings:
+    post:
+      tags: [Clock]
+      operationId: setAlarmSettings
+      summary: Set alarm settings
+      description: Configures alarm settings.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlarmSettings"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  # ============================================================================
+  # DISTRIBUTION (Link) APIs
+  # ============================================================================
+  /v1/dist/getDistributionInfo:
+    get:
+      tags: [Distribution]
+      operationId: getDistributionInfo
+      summary: Get distribution info
+      description: Retrieves MusicCast Link distribution information.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DistributionInfoResponse"
+
+  /v1/dist/setServerInfo:
+    post:
+      tags: [Distribution]
+      operationId: setServerInfo
+      summary: Set server info
+      description: Configures the device as a Link distribution server (master).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServerInfoRequest"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/dist/setClientInfo:
+    post:
+      tags: [Distribution]
+      operationId: setClientInfo
+      summary: Set client info
+      description: Configures the device as a Link distribution client.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientInfoRequest"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/dist/startDistribution:
+    get:
+      tags: [Distribution]
+      operationId: startDistribution
+      summary: Start distribution
+      description: Starts Link audio distribution.
+      parameters:
+        - name: num
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Distribution number on current MusicCast Network
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/dist/stopDistribution:
+    get:
+      tags: [Distribution]
+      operationId: stopDistribution
+      summary: Stop distribution
+      description: Stops Link audio distribution.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+  /v1/dist/setGroupName:
+    post:
+      tags: [Distribution]
+      operationId: setGroupName
+      summary: Set group name
+      description: Sets the name for the Link group.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  maxLength: 128
+                  description: Group name (UTF-8, max 128 bytes)
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicResponse"
+
+components:
+  parameters:
+    zone:
+      name: zone
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/ZoneId"
+      description: Target zone
+
+  schemas:
+    ZoneId:
+      type: string
+      enum: [main, zone2, zone3, zone4]
+      description: Zone identifier
+
+    ResponseCode:
+      type: integer
+      description: |
+        Response code:
+        - 0: Successful request
+        - 1: Initializing
+        - 2: Internal Error
+        - 3: Invalid Request
+        - 4: Invalid Parameter
+        - 5: Guarded
+        - 6: Time Out
+        - 99: Firmware Updating
+        - 100-115: Streaming service errors
+        - 200-201: Distribution errors
+
+    BasicResponse:
+      type: object
+      required: [response_code]
+      properties:
+        response_code:
+          $ref: "#/components/schemas/ResponseCode"
+
+    DeviceInfoResponse:
+      type: object
+      properties:
+        response_code:
+          $ref: "#/components/schemas/ResponseCode"
+        model_name:
+          type: string
+          example: "RX-V679"
+        destination:
+          type: string
+          enum: [J, U, C, R, B, G, BG, T, A, L, K, E, V, F, P, S, H, UC]
+        device_id:
+          type: string
+          description: 12-digit ASCII device ID
+        system_version:
+          type: number
+        api_version:
+          type: number
+        netmodule_generation:
+          type: integer
+        netmodule_version:
+          type: string
+        netmodule_checksum:
+          type: string
+        serial_number:
+          type: string
+        category_code:
+          type: integer
+          description: |
+            Category codes:
+            0: reserved, 1: AV Receiver, 2: Sound Bar, 3: Stereo Receiver,
+            4: Subwoofer, 5: Mini System, 6: Desktop Audio
+
+    FeaturesResponse:
+      type: object
+      properties:
+        response_code:
+          $ref: "#/components/schemas/ResponseCode"
+        system:
+          type: object
+          properties:
+            func_list:
+              type: array
+              items:
+                type: string
+            zone_num:
+              type: integer
+            input_list:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  distribution_enable:
+                    type: boolean
+                  rename_enable:
+                    type: boolean
+                  account_enable:
+                    type: boolean
+                  play_info_type:
+                    type: string
+                    enum: [none, tuner, netusb, cd]
+        zone:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              func_list:
+                type: array
+                items:
+                  type: string
+              input_list:
+                type: array
+                items:
+                  type: string
+              sound_program_list:
+                type: array
+                items:
+                  type: string
+              range_step:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    min:
+                      type: integer
+                    max:
+                      type: integer
+                    step:
+                      type: integer
+        tuner:
+          type: object
+          properties:
+            func_list:
+              type: array
+              items:
+                type: string
+            range_step:
+              type: array
+              items:
+                type: object
+            preset:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [common, separate]
+                num:
+                  type: integer
+        netusb:
+          type: object
+          properties:
+            func_list:
+              type: array
+              items:
+                type: string
+            preset:
+              type: object
+              properties:
+                num:
+                  type: integer
+            recent_info:
+              type: object
+              properties:
+                num:
+                  type: integer
+        distribution:
+          type: object
+          properties:
+            version:
+              type: number
+            compatible_client:
+              type: array
+              items:
+                type: integer
+            client_max:
+              type: integer
+            server_zone_list:
+              type: array
+              items:
+                type: string
+        clock:
+          type: object
+          properties:
+            func_list:
+              type: array
+              items:
+                type: string
+
+    NetworkStatusResponse:
+      type: object
+      properties:
+        response_code:
+          $ref: "#/components/schemas/ResponseCode"
+        network_name:
+          type: string
+        connection:
+          type: string
+          enum: [wired_lan, wireless_lan, wireless_direct, extend_1, extend_2, extend_3, unknown]
+        dhcp:
+          type: boolean
+        ip_address:
+          type: string
+        subnet_mask:
+          type: string
+        default_gateway:
+          type: string
+        dns_server_1:
+          type: string
+        dns_server_2:
+          type: string
+        wireless_lan:
+          type: object
+          properties:
+            ssid:
+              type: string
+            type:
+              type: string
+            key:
+              type: string
+            ch:
+              type: integer
+            signal_level:
+              type: integer
+        mac_address:
+          type: object
+          properties:
+            wired_lan:
+              type: string
+            wireless_lan:
+              type: string
+            wireless_direct:
+              type: string
+
+    WiredLanSettings:
+      type: object
+      properties:
+        dhcp:
+          type: boolean
+        ip_address:
+          type: string
+        subnet_mask:
+          type: string
+        default_gateway:
+          type: string
+        dns_server_1:
+          type: string
+        dns_server_2:
+          type: string
+
+    WirelessLanSettings:
+      type: object
+      properties:
+        ssid:
+          type: string
+          maxLength: 32
+        type:
+          type: string
+          enum: [none, wep, wpa2-psk(aes), mixed_mode]
+        key:
+          type: string
+          maxLength: 64
+        dhcp:
+          type: boolean
+        ip_address:
+          type: string
+        subnet_mask:
+          type: string
+        default_gateway:
+          type: string
+        dns_server_1:
+          type: string
+        dns_server_2:
+          type: string
+
+    BluetoothInfoResponse:
+      type: object
+      properties:
+        response_code:
+          $ref: "#/components/schemas/ResponseCode"
+        bluetooth_standby:
+          type: boolean
+        bluetooth_tx_setting:
+          type: boolean
+        bluetooth_device:
+          type: object
+          properties:
+            connected:
+              type: boolean
+            name:
+              type: string
+            type:
+              type: string
+              enum: [loudspeaker, headphone, handsfree_device, unknown]
+            address:
+              type: string
+
+    FuncStatusResponse:
+      type: object
+      properties:
+        response_code:
+          $ref: "#/components/schemas/ResponseCode"
+        auto_power_standby:
+          type: boolean
+        ir_sensor:
+          type: boolean
+        speaker_a:
+          type: boolean
+        speaker_b:
+          type: boolean
+        headphone:
+          type: boolean
+        dimmer:
+          type: integer
+        zone_b_volume_sync:
+          type: boolean
+        hdmi_out_1:
+          type: boolean
+        hdmi_out_2:
+          type: boolean
+        hdmi_out_3:
+          type: boolean
+        auto_play:
+          type: boolean
+        speaker_pattern:
+          type: integer
+        party_mode:
+          type: boolean
+
+    ZoneStatusResponse:
+      type: object
+      properties:
+        response_code:
+          $ref: "#/components/schemas/ResponseCode"
+        power:
+          type: string
+          enum: [on, standby]
+        sleep:
+          type: integer
+          enum: [0, 30, 60, 90, 120]
+        volume:
+          type: integer
+        mute:
+          type: boolean
+        max_volume:
+          type: integer
+        input:
+          type: string
+        input_text:
+          type: string
+        distribution_enable:
+          type: boolean
+        sound_program:
+          type: string
+        surr_decoder_type:
+          type: string
+        surround_3d:
+          type: boolean
+        direct:
+          type: boolean
+        pure_direct:
+          type: boolean
+        enhancer:
+          type: boolean
+        tone_control:
+          type: object
+          properties:
+            mode:
+              type: string
+            bass:
+              type: integer
+            treble:
+              type: integer
+        equalizer:
+          type: object
+          properties:
+            mode:
+              type: string
+            low:
+              type: integer
+            mid:
+              type: integer
+            high:
+              type: integer
+        balance:
+          type: integer
+        dialogue_level:
+          type: integer
+        dialogue_lift:
+          type: integer
+        clear_voice:
+          type: boolean
+        subwoofer_volume:
+          type: integer
+        bass_extension:
+          type: boolean
+        link_control:
+          type: string
+        link_audio_delay:
+          type: string
+        link_audio_quality:
+          type: string
+        disable_flags:
+          type: integer
+
+    TunerPresetInfoResponse:
+      type: object
+      properties:
+        response_code:
+          $ref: "#/components/schemas/ResponseCode"
+        preset_info:
+          type: array
+          items:
+            type: object
+            properties:
+              band:
+                type: string
+                enum: [am, fm, dab, unknown]
+              number:
+                type: integer
+              hd_program:
+                type: integer
+              text:
+                type: string
+        func_list:
+          type: array
+          items:
+            type: string
+
+    TunerPlayInfoResponse:
+      type: object
+      properties:
+        response_code:
+          $ref: "#/components/schemas/ResponseCode"
+        band:
+          type: string
+          enum: [am, fm, dab]
+        auto_scan:
+          type: boolean
+        auto_preset:
+          type: boolean
+        am:
+          type: object
+          properties:
+            preset:
+              type: integer
+            freq:
+              type: integer
+            tuned:
+              type: boolean
+        fm:
+          type: object
+          properties:
+            preset:
+              type: integer
+            freq:
+              type: integer
+            tuned:
+              type: boolean
+            audio_mode:
+              type: string
+              enum: [mono, stereo]
+        rds:
+          type: object
+          properties:
+            program_type:
+              type: string
+            program_service:
+              type: string
+            radio_text_a:
+              type: string
+            radio_text_b:
+              type: string
+        dab:
+          type: object
+          properties:
+            preset:
+              type: integer
+            id:
+              type: integer
+            status:
+              type: string
+            freq:
+              type: integer
+            category:
+              type: string
+            audio_mode:
+              type: string
+            bit_rate:
+              type: integer
+            quality:
+              type: integer
+            tune_aid:
+              type: integer
+            off_air:
+              type: boolean
+            dab_plus:
+              type: boolean
+            program_type:
+              type: string
+            ch_label:
+              type: string
+            service_label:
+              type: string
+            dls:
+              type: string
+            ensemble_label:
+              type: string
+
+    NetUsbPresetInfoResponse:
+      type: object
+      properties:
+        response_code:
+          $ref: "#/components/schemas/ResponseCode"
+        preset_info:
+          type: array
+          items:
+            type: object
+            properties:
+              input:
+                type: string
+              text:
+                type: string
+              attribute:
+                type: integer
+        func_list:
+          type: array
+          items:
+            type: string
+
+    NetUsbPlayInfoResponse:
+      type: object
+      properties:
+        response_code:
+          $ref: "#/components/schemas/ResponseCode"
+        input:
+          type: string
+        playback:
+          type: string
+          enum: [play, stop, pause, fast_reverse, fast_forward]
+        repeat:
+          type: string
+          enum: [off, one, all]
+        shuffle:
+          type: string
+          enum: [off, on, songs, albums]
+        repeat_available:
+          type: array
+          items:
+            type: string
+        shuffle_available:
+          type: array
+          items:
+            type: string
+        play_time:
+          type: integer
+          description: Current playback time in seconds (-60000 if invalid)
+        total_time:
+          type: integer
+          description: Total time in seconds
+        artist:
+          type: string
+        album:
+          type: string
+        track:
+          type: string
+        albumart_url:
+          type: string
+        albumart_id:
+          type: integer
+        usb_devicetype:
+          type: string
+          enum: [msc, unknown]
+        attribute:
+          type: integer
+
+    NetUsbListInfoResponse:
+      type: object
+      properties:
+        response_code:
+          $ref: "#/components/schemas/ResponseCode"
+        input:
+          type: string
+        menu_layer:
+          type: integer
+        max_line:
+          type: integer
+        index:
+          type: integer
+        playing_index:
+          type: integer
+        menu_name:
+          type: string
+        list_info:
+          type: array
+          items:
+            type: object
+            properties:
+              text:
+                type: string
+              subtexts:
+                type: array
+                items:
+                  type: string
+              thumbnail:
+                type: string
+              attribute:
+                type: integer
+
+    CdPlayInfoResponse:
+      type: object
+      properties:
+        response_code:
+          $ref: "#/components/schemas/ResponseCode"
+        device_status:
+          type: string
+          enum: [open, close, ready, not_ready]
+        playback:
+          type: string
+          enum: [play, stop, pause, fast_reverse, fast_forward]
+        repeat:
+          type: string
+          enum: [off, one, all, folder, a-b]
+        shuffle:
+          type: string
+          enum: [off, on, folder, program]
+        repeat_available:
+          type: array
+          items:
+            type: string
+        shuffle_available:
+          type: array
+          items:
+            type: string
+        play_time:
+          type: integer
+        total_time:
+          type: integer
+        disc_time:
+          type: integer
+        track_number:
+          type: integer
+        total_tracks:
+          type: integer
+        artist:
+          type: string
+        album:
+          type: string
+        track:
+          type: string
+
+    ClockSettingsResponse:
+      type: object
+      properties:
+        response_code:
+          $ref: "#/components/schemas/ResponseCode"
+        auto_sync:
+          type: boolean
+        format:
+          type: string
+          enum: [12h, 24h]
+        alarm:
+          type: object
+          properties:
+            alarm_on:
+              type: boolean
+            volume:
+              type: integer
+            fade_interval:
+              type: integer
+            fade_type:
+              type: integer
+            mode:
+              type: string
+              enum: [oneday, weekly]
+            repeat:
+              type: boolean
+            oneday:
+              type: object
+              properties:
+                enable:
+                  type: boolean
+                time:
+                  type: string
+                beep:
+                  type: boolean
+                playback_type:
+                  type: string
+                  enum: [resume, preset]
+            weekly:
+              type: object
+
+    AlarmSettings:
+      type: object
+      properties:
+        alarm_on:
+          type: boolean
+        volume:
+          type: integer
+        fade_interval:
+          type: integer
+        fade_type:
+          type: integer
+        mode:
+          type: string
+          enum: [oneday, weekly]
+        repeat:
+          type: boolean
+        detail:
+          type: object
+
+    DistributionInfoResponse:
+      type: object
+      properties:
+        response_code:
+          $ref: "#/components/schemas/ResponseCode"
+        group_id:
+          type: string
+          description: Group ID (32-digit hex)
+        group_name:
+          type: string
+        role:
+          type: string
+          enum: [server, client, none]
+        status:
+          type: string
+          enum: [building, working, deleting]
+        server_zone:
+          type: string
+        client_list:
+          type: array
+          items:
+            type: object
+            properties:
+              ip_address:
+                type: string
+              data_type:
+                type: string
+                enum: [base, ext]
+        build_disable:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+              reasons:
+                type: array
+                items:
+                  type: string
+        audio_dropout:
+          type: boolean
+
+    ServerInfoRequest:
+      type: object
+      required: [group_id]
+      properties:
+        group_id:
+          type: string
+          description: Group ID (32-digit hex, empty to cancel)
+        zone:
+          type: string
+          enum: [main, zone2, zone3, zone4]
+        type:
+          type: string
+          enum: [add, remove]
+        client_list:
+          type: array
+          items:
+            type: string
+          maxItems: 9
+          description: Client IP addresses
+
+    ClientInfoRequest:
+      type: object
+      required: [group_id]
+      properties:
+        group_id:
+          type: string
+          description: Group ID (32-digit hex, empty to cancel)
+        zone:
+          type: array
+          items:
+            type: string
+            enum: [main, zone2, zone3, zone4]
+        server_ip_address:
+          type: string
