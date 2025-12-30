@@ -7,7 +7,7 @@ import (
 
 func runZone(prefix ...string) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		return app.New(opts).Zone(append(prefix, args...))
+		return app.New(opts).Zone(cmd, append(prefix, args...))
 	}
 }
 

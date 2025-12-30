@@ -11,7 +11,7 @@ func newRawCmd() *cobra.Command {
 		Short: "Call an arbitrary endpoint by path",
 		Args:  cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.New(opts).Raw(args)
+			return app.New(opts).Raw(cmd, args)
 		},
 	}
 

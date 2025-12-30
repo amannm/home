@@ -7,7 +7,7 @@ import (
 
 func runDist(prefix ...string) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		return app.New(opts).Dist(append(prefix, args...))
+		return app.New(opts).Dist(cmd, append(prefix, args...))
 	}
 }
 

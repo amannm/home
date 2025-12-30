@@ -7,7 +7,7 @@ import (
 
 func runSystem(prefix ...string) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		return app.New(opts).System(append(prefix, args...))
+		return app.New(opts).System(cmd, append(prefix, args...))
 	}
 }
 

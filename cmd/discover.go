@@ -10,7 +10,7 @@ func newDiscoverCmd() *cobra.Command {
 		Use:   "discover",
 		Short: "Discover Yamaha devices on the local network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.New(opts).Discover(args)
+			return app.New(opts).Discover(cmd, args)
 		},
 	}
 

@@ -7,7 +7,7 @@ import (
 
 func runTuner(prefix ...string) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		return app.New(opts).Tuner(append(prefix, args...))
+		return app.New(opts).Tuner(cmd, append(prefix, args...))
 	}
 }
 

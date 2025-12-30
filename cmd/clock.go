@@ -7,7 +7,7 @@ import (
 
 func runClock(prefix ...string) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		return app.New(opts).Clock(append(prefix, args...))
+		return app.New(opts).Clock(cmd, append(prefix, args...))
 	}
 }
 

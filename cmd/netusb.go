@@ -7,7 +7,7 @@ import (
 
 func runNetusb(prefix ...string) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		return app.New(opts).Netusb(append(prefix, args...))
+		return app.New(opts).Netusb(cmd, append(prefix, args...))
 	}
 }
 
