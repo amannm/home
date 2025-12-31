@@ -15,9 +15,6 @@ func (a *App) render(body []byte) error {
 	if len(body) == 0 {
 		return nil
 	}
-	if strings.TrimSpace(a.Options.JQ) != "" {
-		return runJQ(a.Options.JQ, body)
-	}
 	format := strings.ToLower(strings.TrimSpace(a.Options.Format))
 	var v any
 	if err := json.Unmarshal(body, &v); err != nil {

@@ -12,9 +12,7 @@ type Options struct {
 	Auth      string
 	Headers   []string
 	DryRun    bool
-	Curl      bool
 	Format    string
-	JQ        string
 	Verbose   int
 	Quiet     bool
 	NoColor   bool

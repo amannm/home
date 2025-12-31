@@ -55,9 +55,6 @@ func (a *App) call(method, path string, q url.Values, body []byte, contentType s
 	if err != nil {
 		return err
 	}
-	if a.Options.Curl {
-		a.printCurl(req, body, a.Options.DryRun)
-	}
 	if a.Options.DryRun {
 		return a.printRequest(req, body)
 	}
@@ -206,50 +203,6 @@ func (a *App) printRequest(req *http.Request, body []byte) error {
 	return err
 }
 
-func (a *App) printCurl(req *http.Request, body []byte, dry bool) {
-	cmd := curlCommand(req, body, a.Options.Auth)
-	if cmd == "" {
-		return
-	}
-	if dry {
-		_, _ = fmt.Fprintln(os.Stdout, cmd)
-		return
-	}
-	_, _ = fmt.Fprintln(os.Stderr, cmd)
-}
-
-func curlCommand(req *http.Request, body []byte, auth string) string {
-	if req == nil {
-		return ""
-	}
-	var b strings.Builder
-	b.WriteString("curl -sS")
-	if req.Method != http.MethodGet {
-		b.WriteString(" -X ")
-		b.WriteString(req.Method)
-	}
-	if strings.TrimSpace(auth) != "" && req.Header.Get("Authorization") != "" {
-		b.WriteString(" -u ")
-		b.WriteString(shellQuote(auth))
-	}
-	for k, vals := range req.Header {
-		if strings.EqualFold(k, "Authorization") {
-			continue
-		}
-		for _, v := range vals {
-			b.WriteString(" -H ")
-			b.WriteString(shellQuote(k + ": " + v))
-		}
-	}
-	if len(body) > 0 {
-		b.WriteString(" --data-raw ")
-		b.WriteString(shellQuote(string(body)))
-	}
-	b.WriteString(" ")
-	b.WriteString(shellQuote(req.URL.String()))
-	return b.String()
-}
-
 func responseCode(body []byte) (int, bool) {
 	if len(body) == 0 {
 		return 0, false
@@ -293,14 +246,4 @@ func splitAuth(auth string) (string, string) {
 		return parts[0], ""
 	}
 	return parts[0], parts[1]
-}
-
-func shellQuote(s string) string {
-	if s == "" {
-		return "''"
-	}
-	if !strings.ContainsAny(s, " \t\n'\"\\$") {
-		return s
-	}
-	return "'" + strings.ReplaceAll(s, "'", "'\"'\"'") + "'"
 }
