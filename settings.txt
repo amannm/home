@@ -1,0 +1,3 @@
+
+off = 55
+fridge-on = 75
